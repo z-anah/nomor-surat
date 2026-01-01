@@ -18,13 +18,21 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.9",
+    "@heroicons/react": "^2.2.0",
+    "@supabase/auth-helpers-nextjs": "^0.15.0",
+    "@supabase/supabase-js": "^2.89.0",
     "clsx": "^2.0.0",
+    "dayjs": "^1.11.19",
     "lucide-react": "^0.438.0",
     "next": "^15.4.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-hook-form": "^7.69.0",
     "react-icons": "^5.5.0",
+    "react-query": "^3.39.3",
     "tailwind-merge": "^2.6.0",
+    "uuid": "^13.0.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -33,6 +41,7 @@
     "@svgr/webpack": "^8.1.0",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.11",
+    "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^15.0.7",
     "@types/react": "^19.1.8",
@@ -53,6 +62,7 @@
     "postcss": "^8.5.1",
     "prettier": "^2.8.8",
     "prettier-plugin-tailwindcss": "^0.6.14",
+    "tailwind-forms": "^1.0.6",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.8.3"
   },
