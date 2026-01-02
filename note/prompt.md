@@ -7,21 +7,6 @@ I have created tables
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
-CREATE TABLE public.lessons (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  title text NOT NULL,
-  content text NOT NULL,
-  direction character varying DEFAULT 'rtl'::character varying,
-  CONSTRAINT lessons_pkey PRIMARY KEY (id)
-);
-CREATE TABLE public.motivations (
-  id bigint NOT NULL DEFAULT nextval('motivations_id_seq'::regclass),
-  title text NOT NULL,
-  text text NOT NULL,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT motivations_pkey PRIMARY KEY (id)
-);
 CREATE TABLE public.ns_fungsi_type (
   id integer NOT NULL DEFAULT nextval('ns_fungsi_type_id_seq'::regclass),
   fungsi_name text NOT NULL,
@@ -78,22 +63,6 @@ CREATE TABLE public.ns_user_type (
   name text NOT NULL UNIQUE,
   CONSTRAINT ns_user_type_pkey PRIMARY KEY (id)
 );
-CREATE TABLE public.prompts (
-  id bigint NOT NULL DEFAULT nextval('prompts_id_seq'::regclass),
-  title text NOT NULL,
-  task text NOT NULL,
-  persona text NOT NULL,
-  context text,
-  format text,
-  file_type text NOT NULL,
-  more_context text,
-  dynamic_params jsonb DEFAULT '[]'::jsonb,
-  contents jsonb DEFAULT '[]'::jsonb,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT prompts_pkey PRIMARY KEY (id)
-);
-
 
 CREATE OR REPLACE FUNCTION increment_ns_sk_number(p_sk_type_id INT)
 RETURNS INT AS $$
@@ -342,12 +311,54 @@ Deliver a **fully functional Nomor Surat Management System** with:
 
 ---
 
-If you want next:
 
-* ✅ **ERD diagram**
-* ✅ **Nomor surat format logic**
-* ✅ **RLS policies**
-* ✅ **Folder-by-folder code generation**
-* ✅ **UI wireframe**
+ps: use ui nuxt, inspired design by what already coded
 
-Just tell me which one you want first.
+```
+## Authentication Setup Tasks
+
+1. **Install and configure Supabase**
+   - Add `@nuxtjs/supabase` to nuxt.config.ts
+   - Set environment variables for Supabase
+
+2. **Create auth pages structure**
+   - `app/pages/(auth)/login.vue`
+   - `app/pages/(auth)/forgot-password.vue`
+
+3. **Build login form with UAuthForm**
+   - Use existing `UAuthForm` component
+   - Email/password validation
+   - Loading states with existing UI patterns
+
+4. **Create auth composables**
+   - `composables/useAuth.ts`
+   - Login, logout, session management
+
+5. **Set up authentication middleware**
+   - `middleware/auth.ts` - Protect routes
+   - `middleware/guest.ts` - Redirect authenticated users
+
+6. **User profile integration**
+   - Fetch from `ns_user_profile` table (from prompt.md)
+   - Link with Supabase auth user
+
+7. **Role-based redirection**
+   - Admin → `/admin/dashboard`
+   - Editor → `/editor/dashboard`
+   - Use `ns_user_type.name` for role checking
+
+8. **Update navigation**
+   - Modify default.vue
+   - Add auth-specific menu items
+
+9. **Error handling**
+   - Use existing toast system
+   - Invalid credentials feedback
+   - Network error handling
+
+10. **Session persistence**
+    - Auto-login on refresh
+    - Token refresh handling
+    - Logout functionality
+
+```
