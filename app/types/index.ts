@@ -8,3 +8,8 @@ export interface FungsiType {
   fungsi_name: string
   fungsi_code: string
 }
+
+export interface SkType {
+  id: number
+  name: string
+}
