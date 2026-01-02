@@ -20,7 +20,8 @@ export default defineEventHandler(async (event) => {
       full_name: body.full_name,
       username: body.username,
       user_type_id: body.user_type_id ?? null,
-      user_status_id: body.user_status_id ?? null
+      user_status_id: body.user_status_id ?? null,
+      email: body.email ?? null
     })
     .select()
     .single()

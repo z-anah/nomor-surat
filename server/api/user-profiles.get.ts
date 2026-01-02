@@ -11,6 +11,7 @@ export default defineEventHandler(async () => {
       id,
       full_name,
       username,
+      email,
       user_type_id,
       user_status_id,
       created_at,

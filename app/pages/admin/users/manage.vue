@@ -5,10 +5,14 @@
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-        <!-- Remove Add Modal button -->
-        <!-- <template #right>
-          <UserProfilesAddModal @created="refresh" />
-        </template> -->
+        <template #right>
+          <UButton
+            label="Invite User"
+            color="primary"
+            icon="i-lucide-user-plus"
+            @click="router.push('/admin/users/invite')"
+          />
+        </template>
       </UDashboardNavbar>
     </template>
 
@@ -168,6 +172,11 @@ const columns: TableColumn<UserProfile>[] = [
   {
     accessorKey: 'username',
     header: 'Username'
+  },
+  {
+    accessorKey: 'email',
+    header: 'Email',
+    cell: ({ row }) => h('span', {}, row.original.email || '-')
   },
   {
     accessorKey: 'user_type_name',

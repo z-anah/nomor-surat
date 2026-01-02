@@ -23,6 +23,7 @@ export interface UserProfile {
   id: string // uuid
   full_name: string
   username: string
+  email?: string | null
   user_type_id: number | null
   user_status_id: number | null
   created_at: string

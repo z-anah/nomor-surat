@@ -150,7 +150,7 @@ async function onSubmit(event: FormSubmitEvent<ProfileSchema>) {
           v-model="profile.user_type_name"
           :items="userTypeOptions"
           placeholder="Select user type"
-          :disabled="userTypeOptions.length === 0"
+          :disabled="true"
           color="neutral"
         />
       </UFormField>
