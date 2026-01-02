@@ -5,9 +5,10 @@
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-        <template #right>
+        <!-- Remove Add Modal button -->
+        <!-- <template #right>
           <UserProfilesAddModal @created="refresh" />
-        </template>
+        </template> -->
       </UDashboardNavbar>
     </template>
 
@@ -21,6 +22,8 @@
         />
 
         <div class="flex flex-wrap items-center gap-1.5">
+          <!-- Remove Delete Modal button -->
+          <!--
           <UserProfilesDeleteModal
             :count="table?.tableApi?.getFilteredSelectedRowModel().rows.length"
             @confirmed="deleteSelectedUserProfiles"
@@ -39,7 +42,7 @@
               </template>
             </UButton>
           </UserProfilesDeleteModal>
-
+          -->
           <UDropdownMenu
             :items="
               table?.tableApi
@@ -73,7 +76,6 @@
         ref="table"
         v-model:column-filters="columnFilters"
         v-model:column-visibility="columnVisibility"
-        v-model:row-selection="rowSelection"
         v-model:pagination="pagination"
         :pagination-options="{
           getPaginationRowModel: getPaginationRowModel()
@@ -94,8 +96,11 @@
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">
+          <!-- Remove selected rows info -->
+          <!--
           {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
           {{ table?.tableApi?.getFilteredRowModel().rows.length || 0 }} row(s) selected.
+          -->
         </div>
 
         <div class="flex items-center gap-1.5">
@@ -115,12 +120,10 @@
 import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
-import type { Row } from '@tanstack/table-core'
 import type { UserProfile } from '~/types'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
-const UCheckbox = resolveComponent('UCheckbox')
 const UBadge = resolveComponent('UBadge')
 
 const toast = useToast()
@@ -131,67 +134,29 @@ const columnFilters = ref([
   { id: 'username', value: '' }
 ])
 const columnVisibility = ref()
-const rowSelection = ref({})
+// Remove rowSelection
+// const rowSelection = ref({})
 
 const { data, status, refresh } = await useFetch<UserProfile[]>('/api/user-profiles', {
   lazy: true
 })
 
+// Remove deleteUserProfile and deleteSelectedUserProfiles
+/*
 async function deleteUserProfile(id: string) {
-  try {
-    await $fetch(`/api/user-profiles/${id}`, { method: 'DELETE' })
-    toast.add({
-      title: 'User profile deleted',
-      description: 'The user profile has been deleted.'
-    })
-    refresh()
-  } catch (error: any) {
-    toast.add({
-      title: 'Error',
-      description: error.data?.statusMessage || 'Failed to delete user profile',
-      color: 'error'
-    })
-  }
+  ...
 }
-
 async function deleteSelectedUserProfiles() {
-  const selectedRows = table.value?.tableApi?.getFilteredSelectedRowModel().rows || []
-  for (const row of selectedRows) {
-    await deleteUserProfile(row.original.id)
-  }
-  rowSelection.value = {}
+  ...
 }
+*/
 
+// Remove getRowItems
+/*
 function getRowItems(row: Row<UserProfile>) {
-  return [
-    {
-      type: 'label',
-      label: 'Actions'
-    },
-    {
-      label: 'Copy ID',
-      icon: 'i-lucide-copy',
-      onSelect() {
-        navigator.clipboard.writeText(row.original.id.toString())
-        toast.add({
-          title: 'Copied to clipboard',
-          description: 'User profile ID copied to clipboard'
-        })
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'Delete user profile',
-      icon: 'i-lucide-trash',
-      color: 'error',
-      onSelect() {
-        deleteUserProfile(row.original.id)
-      }
-    }
-  ]
+  ...
 }
+*/
 
 function formatDate(dateStr: string) {
   if (!dateStr) return '-'
@@ -215,24 +180,25 @@ const userStatusColors: Record<string, string> = {
 }
 
 const columns: TableColumn<UserProfile>[] = [
-  {
-    id: 'select',
-    header: ({ table }) =>
-      h(UCheckbox, {
-        'modelValue': table.getIsSomePageRowsSelected()
-          ? 'indeterminate'
-          : table.getIsAllPageRowsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-          table.toggleAllPageRowsSelected(!!value),
-        'ariaLabel': 'Select all'
-      }),
-    cell: ({ row }) =>
-      h(UCheckbox, {
-        'modelValue': row.getIsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
-        'ariaLabel': 'Select row'
-      })
-  },
+  // Remove select column
+  // {
+  //   id: 'select',
+  //   header: ({ table }) =>
+  //     h(UCheckbox, {
+  //       'modelValue': table.getIsSomePageRowsSelected()
+  //         ? 'indeterminate'
+  //         : table.getIsAllPageRowsSelected(),
+  //       'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+  //         table.toggleAllPageRowsSelected(!!value),
+  //       'ariaLabel': 'Select all'
+  //     }),
+  //   cell: ({ row }) =>
+  //     h(UCheckbox, {
+  //       'modelValue': row.getIsSelected(),
+  //       'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
+  //       'ariaLabel': 'Select row'
+  //     })
+  // },
   {
     accessorKey: 'full_name',
     header: 'Full Name',
@@ -274,32 +240,33 @@ const columns: TableColumn<UserProfile>[] = [
     accessorKey: 'created_at',
     header: 'Created At',
     cell: ({ row }) => h('span', {}, formatDate(row.original.created_at))
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      return h(
-        'div',
-        { class: 'text-right' },
-        h(
-          UDropdownMenu,
-          {
-            content: {
-              align: 'end'
-            },
-            items: getRowItems(row)
-          },
-          () =>
-            h(UButton, {
-              icon: 'i-lucide-ellipsis-vertical',
-              color: 'neutral',
-              variant: 'ghost',
-              class: 'ml-auto'
-            })
-        )
-      )
-    }
   }
+  // Remove actions column
+  // {
+  //   id: 'actions',
+  //   cell: ({ row }) => {
+  //     return h(
+  //       'div',
+  //       { class: 'text-right' },
+  //       h(
+  //         UDropdownMenu,
+  //         {
+  //           content: {
+  //             align: 'end'
+  //           },
+  //           items: getRowItems(row)
+  //         },
+  //         () =>
+  //           h(UButton, {
+  //             icon: 'i-lucide-ellipsis-vertical',
+  //             color: 'neutral',
+  //             variant: 'ghost',
+  //             class: 'ml-auto'
+  //           })
+  //       )
+  //     )
+  //   }
+  // }
 ]
 
 const nameFilter = computed({

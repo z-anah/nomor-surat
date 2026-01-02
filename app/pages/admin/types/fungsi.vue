@@ -5,10 +5,10 @@
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-
-        <template #right>
+        <!-- Remove Add Modal button -->
+        <!-- <template #right>
           <FungsiTypesAddModal @created="refresh" />
-        </template>
+        </template> -->
       </UDashboardNavbar>
     </template>
 
@@ -22,6 +22,8 @@
         />
 
         <div class="flex flex-wrap items-center gap-1.5">
+          <!-- Remove Delete Modal button -->
+          <!--
           <FungsiTypesDeleteModal
             :count="table?.tableApi?.getFilteredSelectedRowModel().rows.length"
             @confirmed="deleteSelectedFungsiTypes"
@@ -40,7 +42,7 @@
               </template>
             </UButton>
           </FungsiTypesDeleteModal>
-
+          -->
           <UDropdownMenu
             :items="
               table?.tableApi
@@ -74,7 +76,6 @@
         ref="table"
         v-model:column-filters="columnFilters"
         v-model:column-visibility="columnVisibility"
-        v-model:row-selection="rowSelection"
         v-model:pagination="pagination"
         :pagination-options="{
           getPaginationRowModel: getPaginationRowModel()
@@ -95,8 +96,11 @@
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">
+          <!-- Remove selected rows info -->
+          <!--
           {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
           {{ table?.tableApi?.getFilteredRowModel().rows.length || 0 }} row(s) selected.
+          -->
         </div>
 
         <div class="flex items-center gap-1.5">
@@ -116,12 +120,12 @@
 import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
-import type { Row } from '@tanstack/table-core'
 import type { FungsiType } from '~/types'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
-const UCheckbox = resolveComponent('UCheckbox')
+// Remove UCheckbox import
+// const UCheckbox = resolveComponent('UCheckbox')
 
 const toast = useToast()
 const table = useTemplateRef('table')
@@ -131,87 +135,50 @@ const columnFilters = ref([{
   value: ''
 }])
 const columnVisibility = ref()
-const rowSelection = ref({})
+// Remove rowSelection
+// const rowSelection = ref({})
 
 const { data, status, refresh } = await useFetch<FungsiType[]>('/api/fungsi-types', {
   lazy: true
 })
 
+// Remove deleteFungsiType and deleteSelectedFungsiTypes
+/*
 async function deleteFungsiType(id: number) {
-  try {
-    await $fetch(`/api/fungsi-types/${id}`, { method: 'DELETE' })
-    toast.add({
-      title: 'Fungsi type deleted',
-      description: 'The fungsi type has been deleted.'
-    })
-    refresh()
-  } catch (error: any) {
-    toast.add({
-      title: 'Error',
-      description: error.data?.statusMessage || 'Failed to delete fungsi type',
-      color: 'error'
-    })
-  }
+  ...
 }
-
 async function deleteSelectedFungsiTypes() {
-  const selectedRows = table.value?.tableApi?.getFilteredSelectedRowModel().rows || []
-  for (const row of selectedRows) {
-    await deleteFungsiType(row.original.id)
-  }
-  rowSelection.value = {}
+  ...
 }
+*/
 
+// Remove getRowItems
+/*
 function getRowItems(row: Row<FungsiType>) {
-  return [
-    {
-      type: 'label',
-      label: 'Actions'
-    },
-    {
-      label: 'Copy ID',
-      icon: 'i-lucide-copy',
-      onSelect() {
-        navigator.clipboard.writeText(row.original.id.toString())
-        toast.add({
-          title: 'Copied to clipboard',
-          description: 'Fungsi type ID copied to clipboard'
-        })
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'Delete fungsi type',
-      icon: 'i-lucide-trash',
-      color: 'error',
-      onSelect() {
-        deleteFungsiType(row.original.id)
-      }
-    }
-  ]
+  ...
 }
+*/
 
 const columns: TableColumn<FungsiType>[] = [
-  {
-    id: 'select',
-    header: ({ table }) =>
-      h(UCheckbox, {
-        'modelValue': table.getIsSomePageRowsSelected()
-          ? 'indeterminate'
-          : table.getIsAllPageRowsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-          table.toggleAllPageRowsSelected(!!value),
-        'ariaLabel': 'Select all'
-      }),
-    cell: ({ row }) =>
-      h(UCheckbox, {
-        'modelValue': row.getIsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
-        'ariaLabel': 'Select row'
-      })
-  },
+  // Remove select column
+  // {
+  //   id: 'select',
+  //   header: ({ table }) =>
+  //     h(UCheckbox, {
+  //       'modelValue': table.getIsSomePageRowsSelected()
+  //         ? 'indeterminate'
+  //         : table.getIsAllPageRowsSelected(),
+  //       'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+  //         table.toggleAllPageRowsSelected(!!value),
+  //       'ariaLabel': 'Select all'
+  //     }),
+  //   cell: ({ row }) =>
+  //     h(UCheckbox, {
+  //       'modelValue': row.getIsSelected(),
+  //       'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
+  //       'ariaLabel': 'Select row'
+  //     })
+  // },
   {
     accessorKey: 'id',
     header: 'ID'
@@ -240,31 +207,32 @@ const columns: TableColumn<FungsiType>[] = [
     header: 'Fungsi Code',
     cell: ({ row }) => h('span', { class: 'font-mono text-muted' }, row.original.fungsi_code)
   },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      return h(
-        'div',
-        { class: 'text-right' },
-        h(
-          UDropdownMenu,
-          {
-            content: {
-              align: 'end'
-            },
-            items: getRowItems(row)
-          },
-          () =>
-            h(UButton, {
-              icon: 'i-lucide-ellipsis-vertical',
-              color: 'neutral',
-              variant: 'ghost',
-              class: 'ml-auto'
-            })
-        )
-      )
-    }
-  }
+  // Remove actions column
+  // {
+  //   id: 'actions',
+  //   cell: ({ row }) => {
+  //     return h(
+  //       'div',
+  //       { class: 'text-right' },
+  //       h(
+  //         UDropdownMenu,
+  //         {
+  //           content: {
+  //             align: 'end'
+  //           },
+  //           items: getRowItems(row)
+  //         },
+  //         () =>
+  //           h(UButton, {
+  //             icon: 'i-lucide-ellipsis-vertical',
+  //             color: 'neutral',
+  //             variant: 'ghost',
+  //             class: 'ml-auto'
+  //           })
+  //       )
+  //     )
+  //   }
+  // }
 ]
 
 const nameFilter = computed({
