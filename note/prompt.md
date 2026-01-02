@@ -4,9 +4,6 @@ I have created tables
 
 # supabase
 ```
--- WARNING: This schema is for context only and is not meant to be run.
--- Table order and constraints may not be valid for execution.
-
 CREATE TABLE public.ns_fungsi_type (
   id integer NOT NULL DEFAULT nextval('ns_fungsi_type_id_seq'::regclass),
   fungsi_name text NOT NULL,

@@ -131,32 +131,32 @@ const links = [[{
     children: [
       {
         label: 'Create Nomor Surat',
-        to: '/admin/nomor-surat/create',
+        to: '/admin/ns/create',
         onSelect: () => { open.value = false }
       },
       {
         label: 'Create Personalized Nomor Surat',
-        to: '/admin/nomor-surat/create-personalized',
+        to: '/admin/ns/create-personalized',
         onSelect: () => { open.value = false }
       },
       {
         label: 'Nomor Surat List',
-        to: '/admin/nomor-surat/list',
+        to: '/admin/ns/list',
         onSelect: () => { open.value = false }
       },
       {
         label: 'Edit Nomor Surat',
-        to: '/admin/nomor-surat/edit',
+        to: '/admin/ns/edit',
         onSelect: () => { open.value = false }
       },
       {
         label: 'Upload File',
-        to: '/admin/nomor-surat/upload',
+        to: '/admin/ns/upload',
         onSelect: () => { open.value = false }
       },
       {
         label: 'Request Nomor Surat',
-        to: '/admin/nomor-surat/request',
+        to: '/admin/ns/request',
         onSelect: () => { open.value = false }
       }
     ]
