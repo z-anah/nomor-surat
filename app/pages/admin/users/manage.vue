@@ -121,6 +121,7 @@ import type { UserProfile } from '~/types'
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UCheckbox = resolveComponent('UCheckbox')
+const UBadge = resolveComponent('UBadge')
 
 const toast = useToast()
 const table = useTemplateRef('table')
@@ -192,6 +193,27 @@ function getRowItems(row: Row<UserProfile>) {
   ]
 }
 
+function formatDate(dateStr: string) {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return dateStr
+  return date.toLocaleString()
+}
+
+// Optionally, define color mappings for user type and status
+const userTypeColors: Record<string, string> = {
+  admin: 'primary',
+  staff: 'success',
+  guest: 'warning'
+  // Add more as needed
+}
+const userStatusColors: Record<string, string> = {
+  active: 'success',
+  inactive: 'neutral',
+  suspended: 'error'
+  // Add more as needed
+}
+
 const columns: TableColumn<UserProfile>[] = [
   {
     id: 'select',
@@ -212,10 +234,6 @@ const columns: TableColumn<UserProfile>[] = [
       })
   },
   {
-    accessorKey: 'id',
-    header: 'ID'
-  },
-  {
     accessorKey: 'full_name',
     header: 'Full Name',
     cell: ({ row }) => h('span', { class: 'font-medium text-highlighted' }, row.original.full_name)
@@ -227,16 +245,35 @@ const columns: TableColumn<UserProfile>[] = [
   {
     accessorKey: 'user_type_name',
     header: 'User Type',
-    cell: ({ row }) => h('span', {}, row.original.user_type_name || '-')
+    cell: ({ row }) =>
+      h(
+        UBadge,
+        {
+          class: 'capitalize',
+          variant: 'subtle',
+          color: userTypeColors[(row.original.user_type_name || '').toLowerCase()] || 'primary'
+        },
+        () => row.original.user_type_name || '-'
+      )
   },
   {
     accessorKey: 'user_status_name',
     header: 'User Status',
-    cell: ({ row }) => h('span', {}, row.original.user_status_name || '-')
+    cell: ({ row }) =>
+      h(
+        UBadge,
+        {
+          class: 'capitalize',
+          variant: 'subtle',
+          color: userStatusColors[(row.original.user_status_name || '').toLowerCase()] || 'neutral'
+        },
+        () => row.original.user_status_name || '-'
+      )
   },
   {
     accessorKey: 'created_at',
-    header: 'Created At'
+    header: 'Created At',
+    cell: ({ row }) => h('span', {}, formatDate(row.original.created_at))
   },
   {
     id: 'actions',
