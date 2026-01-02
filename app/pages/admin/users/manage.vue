@@ -225,12 +225,14 @@ const columns: TableColumn<UserProfile>[] = [
     header: 'Username'
   },
   {
-    accessorKey: 'user_type_id',
-    header: 'User Type ID'
+    accessorKey: 'user_type_name',
+    header: 'User Type',
+    cell: ({ row }) => h('span', {}, row.original.user_type_name || '-')
   },
   {
-    accessorKey: 'user_status_id',
-    header: 'User Status ID'
+    accessorKey: 'user_status_name',
+    header: 'User Status',
+    cell: ({ row }) => h('span', {}, row.original.user_status_name || '-')
   },
   {
     accessorKey: 'created_at',

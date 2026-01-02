@@ -21,4 +21,6 @@ export interface UserProfile {
   user_type_id: number | null
   user_status_id: number | null
   created_at: string
+  user_type_name?: string | null
+  user_status_name?: string | null
 }
