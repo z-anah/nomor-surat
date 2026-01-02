@@ -121,6 +121,7 @@ import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
 import type { UserProfile } from '~/types'
+import { useRouter } from 'vue-router'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
@@ -128,35 +129,17 @@ const UBadge = resolveComponent('UBadge')
 
 const toast = useToast()
 const table = useTemplateRef('table')
+const router = useRouter()
 
 const columnFilters = ref([
   { id: 'full_name', value: '' },
   { id: 'username', value: '' }
 ])
 const columnVisibility = ref()
-// Remove rowSelection
-// const rowSelection = ref({})
 
 const { data, status, refresh } = await useFetch<UserProfile[]>('/api/user-profiles', {
   lazy: true
 })
-
-// Remove deleteUserProfile and deleteSelectedUserProfiles
-/*
-async function deleteUserProfile(id: string) {
-  ...
-}
-async function deleteSelectedUserProfiles() {
-  ...
-}
-*/
-
-// Remove getRowItems
-/*
-function getRowItems(row: Row<UserProfile>) {
-  ...
-}
-*/
 
 function formatDate(dateStr: string) {
   if (!dateStr) return '-'
@@ -165,40 +148,18 @@ function formatDate(dateStr: string) {
   return date.toLocaleString()
 }
 
-// Optionally, define color mappings for user type and status
 const userTypeColors: Record<string, string> = {
   admin: 'primary',
   staff: 'success',
   guest: 'warning'
-  // Add more as needed
 }
 const userStatusColors: Record<string, string> = {
   active: 'success',
   inactive: 'neutral',
   suspended: 'error'
-  // Add more as needed
 }
 
 const columns: TableColumn<UserProfile>[] = [
-  // Remove select column
-  // {
-  //   id: 'select',
-  //   header: ({ table }) =>
-  //     h(UCheckbox, {
-  //       'modelValue': table.getIsSomePageRowsSelected()
-  //         ? 'indeterminate'
-  //         : table.getIsAllPageRowsSelected(),
-  //       'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-  //         table.toggleAllPageRowsSelected(!!value),
-  //       'ariaLabel': 'Select all'
-  //     }),
-  //   cell: ({ row }) =>
-  //     h(UCheckbox, {
-  //       'modelValue': row.getIsSelected(),
-  //       'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
-  //       'ariaLabel': 'Select row'
-  //     })
-  // },
   {
     accessorKey: 'full_name',
     header: 'Full Name',
@@ -240,33 +201,22 @@ const columns: TableColumn<UserProfile>[] = [
     accessorKey: 'created_at',
     header: 'Created At',
     cell: ({ row }) => h('span', {}, formatDate(row.original.created_at))
+  },
+  {
+    id: 'edit',
+    header: 'Edit',
+    cell: ({ row }) =>
+      h(
+        UButton,
+        {
+          label: 'Edit',
+          color: 'primary',
+          variant: 'outline',
+          size: 'xs',
+          onClick: () => router.push(`/admin/users/${row.original.id}/edit`)
+        }
+      )
   }
-  // Remove actions column
-  // {
-  //   id: 'actions',
-  //   cell: ({ row }) => {
-  //     return h(
-  //       'div',
-  //       { class: 'text-right' },
-  //       h(
-  //         UDropdownMenu,
-  //         {
-  //           content: {
-  //             align: 'end'
-  //           },
-  //           items: getRowItems(row)
-  //         },
-  //         () =>
-  //           h(UButton, {
-  //             icon: 'i-lucide-ellipsis-vertical',
-  //             color: 'neutral',
-  //             variant: 'ghost',
-  //             class: 'ml-auto'
-  //           })
-  //       )
-  //     )
-  //   }
-  // }
 ]
 
 const nameFilter = computed({

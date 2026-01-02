@@ -14,6 +14,11 @@ export interface SkType {
   name: string
 }
 
+export interface UserStatus {
+  id: number
+  name: string
+}
+
 export interface UserProfile {
   id: string // uuid
   full_name: string
