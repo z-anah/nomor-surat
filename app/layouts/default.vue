@@ -130,11 +130,6 @@ const links = [[{
     type: 'trigger',
     children: [
       {
-        label: 'Create Nomor Surat',
-        to: '/admin/ns/create',
-        onSelect: () => { open.value = false }
-      },
-      {
         label: 'Create Personalized Nomor Surat',
         to: '/admin/ns/create-personalized',
         onSelect: () => { open.value = false }
@@ -142,16 +137,6 @@ const links = [[{
       {
         label: 'Nomor Surat List',
         to: '/admin/ns/list',
-        onSelect: () => { open.value = false }
-      },
-      {
-        label: 'Edit Nomor Surat',
-        to: '/admin/ns/edit',
-        onSelect: () => { open.value = false }
-      },
-      {
-        label: 'Upload File',
-        to: '/admin/ns/upload',
         onSelect: () => { open.value = false }
       },
       {

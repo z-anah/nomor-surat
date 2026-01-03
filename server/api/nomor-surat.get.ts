@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
     id: item.id,
     user_id: item.user_id,
     title: item.title,
+    file: item.file,
     generated_nomor_surat: item.generated_nomor_surat,
     fungsi_type_id: item.fungsi_type_id,
     sk_type_id: item.sk_type_id,

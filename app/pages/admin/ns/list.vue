@@ -201,46 +201,55 @@ const columns: TableColumn<NomorSurat>[] = [
     header: 'Actions',
     cell: ({ row }) => {
       const fileUrl = row.original.file
-      // If file exists, show "see" icon, else show "upload" icon
-      if (fileUrl) {
-        return h(
-          UButton,
-          {
-            icon: 'i-lucide-eye',
-            color: 'primary',
-            variant: 'ghost',
-            title: 'See file',
-            onClick: () => {
-              // Download file
-              window.open(fileUrl, '_blank')
-            }
-          }
-        )
-      } else {
-        // Render upload button and hidden file input
-        return h('div', [
-          h(
-            UButton,
-            {
-              icon: 'i-lucide-upload',
-              color: 'primary',
-              variant: 'ghost',
-              title: 'Upload file',
-              onClick: () => {
-                // Trigger file input dialog
-                fileInputRefs.value[row.original.id]?.click()
+      const progress = uploadProgress.value[row.original.id]
+      // Set a fixed width for the actions cell
+      return h('div', { style: { width: '100px', display: 'flex', justifyContent: 'center' } }, [
+        progress !== undefined && progress < 100
+          ? h(
+              resolveComponent('UProgress'),
+              {
+                value: progress,
+                max: 100,
+                color: 'primary',
+                size: 'sm',
+                class: 'w-10'
               }
-            }
-          ),
-          h('input', {
-            type: 'file',
-            accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png',
-            style: { display: 'none' },
-            ref: (el: any) => { fileInputRefs.value[row.original.id] = el },
-            onChange: (e: Event) => handleFileUpload(row.original.id, e)
-          })
-        ])
-      }
+            )
+          : fileUrl
+          ? h(
+              UButton,
+              {
+                icon: 'i-lucide-eye',
+                color: 'primary',
+                variant: 'ghost',
+                title: 'See file',
+                onClick: () => {
+                  window.open(fileUrl, '_blank')
+                }
+              }
+            )
+          : [
+              h(
+                UButton,
+                {
+                  icon: 'i-lucide-upload',
+                  color: 'primary',
+                  variant: 'ghost',
+                  title: 'Upload file',
+                  onClick: () => {
+                    fileInputRefs.value[row.original.id]?.click()
+                  }
+                }
+              ),
+              h('input', {
+                type: 'file',
+                accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png',
+                style: { display: 'none' },
+                ref: (el: any) => { fileInputRefs.value[row.original.id] = el },
+                onChange: (e: Event) => handleFileUpload(row.original.id, e)
+              })
+            ]
+      ])
     }
   }
 ]
@@ -261,6 +270,8 @@ const pagination = ref({
 
 // For file input dialog
 const fileInputRefs = ref<{ [key: number]: HTMLInputElement | null }>({})
+// Track upload progress per row
+const uploadProgress = ref<{ [key: number]: number }>({})
 
 // Handle file upload
 async function handleFileUpload(nomorSuratId: number, event: Event) {
@@ -269,14 +280,28 @@ async function handleFileUpload(nomorSuratId: number, event: Event) {
 
   const file = input.files[0]
   const ext = file.name.split('.').pop()
-  const filePath = `nomor-surat/${nomorSuratId}/${Date.now()}.${ext}`
+  const filePath = `${Date.now()}.${ext}`
 
-  // Upload to Supabase Storage
+  // Reset progress
+  uploadProgress.value[nomorSuratId] = 0
+
+  // Upload to Supabase Storage with progress
   const { error: uploadError } = await supabase.storage
     .from('ns')
-    .upload(filePath, file, { upsert: true })
+    .upload(filePath, file, {
+      upsert: true,
+      onUploadProgress: (event: ProgressEvent) => {
+        if (event.lengthComputable) {
+          uploadProgress.value[nomorSuratId] = Math.round((event.loaded / event.total) * 100)
+        }
+      }
+    })
+
+  // Remove progress bar after upload
+  uploadProgress.value[nomorSuratId] = undefined
 
   if (uploadError) {
+    console.error('Upload Error:', uploadError)
     toast.add({
       title: 'Upload Error',
       description: uploadError.message,
@@ -307,7 +332,8 @@ async function handleFileUpload(nomorSuratId: number, event: Event) {
   toast.add({
     title: 'Success',
     description: 'File uploaded successfully.',
-    color: 'success'
+    color: 'success',
+    duration: 2500,
   })
 
   refresh()
