@@ -38,3 +38,16 @@ export interface UserProfile {
   user_type_name?: string | null
   user_status_name?: string | null
 }
+
+export interface NomorSurat {
+  id: number
+  user_id: string
+  title: string
+  generated_nomor_surat: string
+  fungsi_type_id: number
+  sk_type_id: number
+  created_at: string
+  fungsi_name?: string
+  sk_type_name?: string
+  user_name?: string
+}
