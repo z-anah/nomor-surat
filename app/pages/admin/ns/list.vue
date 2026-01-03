@@ -92,6 +92,7 @@ import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
 import type { NomorSurat } from '~/types'
+import { useSupabaseClient } from '#imports'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
@@ -101,6 +102,8 @@ const UIcon = resolveComponent('UIcon')
 
 const table = useTemplateRef('table')
 const router = useRouter()
+const supabase = useSupabaseClient()
+const toast = useToast()
 
 const columnFilters = ref([{
   id: 'title',
@@ -214,19 +217,29 @@ const columns: TableColumn<NomorSurat>[] = [
           }
         )
       } else {
-        return h(
-          UButton,
-          {
-            icon: 'i-lucide-upload',
-            color: 'primary',
-            variant: 'ghost',
-            title: 'Upload file',
-            onClick: () => {
-              // Redirect to upload page for this nomor_surat
-              router.push(`/admin/ns/upload?nomor_surat_id=${row.original.id}`)
+        // Render upload button and hidden file input
+        return h('div', [
+          h(
+            UButton,
+            {
+              icon: 'i-lucide-upload',
+              color: 'primary',
+              variant: 'ghost',
+              title: 'Upload file',
+              onClick: () => {
+                // Trigger file input dialog
+                fileInputRefs.value[row.original.id]?.click()
+              }
             }
-          }
-        )
+          ),
+          h('input', {
+            type: 'file',
+            accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png',
+            style: { display: 'none' },
+            ref: (el: any) => { fileInputRefs.value[row.original.id] = el },
+            onChange: (e: Event) => handleFileUpload(row.original.id, e)
+          })
+        ])
       }
     }
   }
@@ -245,4 +258,58 @@ const pagination = ref({
   pageIndex: 0,
   pageSize: 10
 })
+
+// For file input dialog
+const fileInputRefs = ref<{ [key: number]: HTMLInputElement | null }>({})
+
+// Handle file upload
+async function handleFileUpload(nomorSuratId: number, event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files || input.files.length === 0) return
+
+  const file = input.files[0]
+  const ext = file.name.split('.').pop()
+  const filePath = `nomor-surat/${nomorSuratId}/${Date.now()}.${ext}`
+
+  // Upload to Supabase Storage
+  const { error: uploadError } = await supabase.storage
+    .from('ns')
+    .upload(filePath, file, { upsert: true })
+
+  if (uploadError) {
+    toast.add({
+      title: 'Upload Error',
+      description: uploadError.message,
+      color: 'error'
+    })
+    return
+  }
+
+  // Get public URL
+  const { data: publicUrlData } = supabase.storage.from('ns').getPublicUrl(filePath)
+  const publicUrl = publicUrlData.publicUrl
+
+  // Update file_url in DB
+  const { error: updateError } = await $fetch(`/api/nomor-surat/${nomorSuratId}/file-url`, {
+    method: 'POST',
+    body: { file_url: publicUrl }
+  })
+
+  if (updateError) {
+    toast.add({
+      title: 'Update Error',
+      description: updateError.data?.statusMessage || 'Failed to update file URL.',
+      color: 'error'
+    })
+    return
+  }
+
+  toast.add({
+    title: 'Success',
+    description: 'File uploaded successfully.',
+    color: 'success'
+  })
+
+  refresh()
+}
 </script>
