@@ -95,6 +95,8 @@ import type { NomorSurat } from '~/types'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
+const UAvatar = resolveComponent('UAvatar')
+const UTooltip = resolveComponent('UTooltip')
 
 const table = useTemplateRef('table')
 
@@ -151,7 +153,14 @@ const columns: TableColumn<NomorSurat>[] = [
   {
     accessorKey: 'user_name',
     header: 'Created By',
-    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.user_name || '-')
+    cell: ({ row }) => {
+      const userName = row.original.user_name || '-'
+      if (userName === '-') return h('span', { class: 'text-sm text-muted' }, '-')
+      
+      return h(UTooltip, { text: userName }, {
+        default: () => h(UAvatar, { alt: userName, size: 'md' })
+      })
+    }
   },
   {
     accessorKey: 'created_at',
