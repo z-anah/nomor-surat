@@ -97,8 +97,10 @@ const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UAvatar = resolveComponent('UAvatar')
 const UTooltip = resolveComponent('UTooltip')
+const UIcon = resolveComponent('UIcon')
 
 const table = useTemplateRef('table')
+const router = useRouter()
 
 const columnFilters = ref([{
   id: 'title',
@@ -188,6 +190,44 @@ const columns: TableColumn<NomorSurat>[] = [
         hour: '2-digit',
         minute: '2-digit'
       }))
+    }
+  },
+  // Actions column
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => {
+      const fileUrl = row.original.file_url
+      // If file exists, show "see" icon, else show "upload" icon
+      if (fileUrl) {
+        return h(
+          UButton,
+          {
+            icon: 'i-lucide-eye',
+            color: 'primary',
+            variant: 'ghost',
+            title: 'See file',
+            onClick: () => {
+              // Download file
+              window.open(fileUrl, '_blank')
+            }
+          }
+        )
+      } else {
+        return h(
+          UButton,
+          {
+            icon: 'i-lucide-upload',
+            color: 'primary',
+            variant: 'ghost',
+            title: 'Upload file',
+            onClick: () => {
+              // Redirect to upload page for this nomor_surat
+              router.push(`/admin/ns/upload?nomor_surat_id=${row.original.id}`)
+            }
+          }
+        )
+      }
     }
   }
 ]

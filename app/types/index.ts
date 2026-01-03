@@ -50,4 +50,5 @@ export interface NomorSurat {
   fungsi_name?: string
   sk_type_name?: string
   user_name?: string
+  file_url?: string
 }
