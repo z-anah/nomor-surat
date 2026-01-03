@@ -14,6 +14,14 @@ export interface SkType {
   name: string
 }
 
+export interface SkNumberTemp {
+  id: number
+  sk_type_id: number
+  last_number: number
+  year: number | null
+  sk_type_name?: string
+}
+
 export interface UserStatus {
   id: number
   name: string
