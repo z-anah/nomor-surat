@@ -4,12 +4,12 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const id = getRouterParam(event, 'id')
   const body = await readBody(event)
-  const { file_url } = body
+  const { file } = body
 
-  if (!id || !file_url) {
+  if (!id || !file) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'id and file_url are required'
+      statusMessage: 'id and file are required'
     })
   }
 
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
 
   const { error } = await supabase
     .from('ns_nomor_surat')
-    .update({ file_url })
+    .update({ file })
     .eq('id', id)
 
   if (error) {

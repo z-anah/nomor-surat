@@ -200,7 +200,7 @@ const columns: TableColumn<NomorSurat>[] = [
     id: 'actions',
     header: 'Actions',
     cell: ({ row }) => {
-      const fileUrl = row.original.file_url
+      const fileUrl = row.original.file
       // If file exists, show "see" icon, else show "upload" icon
       if (fileUrl) {
         return h(
@@ -289,10 +289,10 @@ async function handleFileUpload(nomorSuratId: number, event: Event) {
   const { data: publicUrlData } = supabase.storage.from('ns').getPublicUrl(filePath)
   const publicUrl = publicUrlData.publicUrl
 
-  // Update file_url in DB
+  // Update file in DB
   const { error: updateError } = await $fetch(`/api/nomor-surat/${nomorSuratId}/file-url`, {
     method: 'POST',
-    body: { file_url: publicUrl }
+    body: { file: publicUrl }
   })
 
   if (updateError) {
