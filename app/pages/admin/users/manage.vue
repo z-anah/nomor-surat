@@ -141,9 +141,24 @@ const columnFilters = ref([
 ])
 const columnVisibility = ref()
 
-const { data, status, refresh } = await useFetch<UserProfile[]>('/api/user-profiles', {
-  lazy: true
-})
+const { data, status, refresh } = await supabase
+    .from('ns_user_profile')
+    .select(`
+      id,
+      full_name,
+      username,
+      email,
+      user_type_id,
+      user_status_id,
+      created_at,
+      ns_user_type (
+        name
+      ),
+      ns_user_status (
+        name
+      )
+    `)
+    .order('created_at', { ascending: false })
 
 function formatDate(dateStr: string) {
   if (!dateStr) return '-'

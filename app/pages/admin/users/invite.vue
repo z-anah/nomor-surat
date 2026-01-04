@@ -18,8 +18,15 @@ const inviteSchema = z.object({
 
 type InviteSchema = z.output<typeof inviteSchema>
 
-const { data: userTypes } = await useFetch<UserType[]>('/api/user-types')
-const { data: userStatuses } = await useFetch<UserStatus[]>('/api/user-statuses')
+const { data: userTypes } = await supabase
+  .from('ns_user_type')
+  .select('*')
+  .order('name', { ascending: true })
+
+const { data: userStatuses } = await supabase
+  .from('ns_user_status')
+  .select('*')
+  .order('name', { ascending: true })
 
 // Only allow user_type_id=3 and user_status_id=1
 const allowedUserType = computed(() => userTypes.value?.find(t => t.id === 3))
@@ -88,25 +95,24 @@ async function onSubmit(event: FormSubmitEvent<InviteSchema>) {
     return
   }
 
-  // Step 2: Insert user profile
-  const { error: profileError } = await useFetch('/api/user-profiles', {
-    method: 'POST',
-    body: {
+  // Step 2: Insert user profile directly with Supabase
+  const { error: profileError } = await supabase
+    .from('ns_user_profile')
+    .insert({
       id: userId,
       full_name: inviteForm.full_name,
       username: inviteForm.username,
       user_type_id: type.id,
       user_status_id: status.id,
-        email: inviteForm.email
-    }
-  })
+      email: inviteForm.email
+    })
 
   submitting.value = false
 
-  if (profileError.value) {
+  if (profileError) {
     toast.add({
       title: 'Profile Error',
-      description: profileError.value.data?.statusMessage || 'Failed to create user profile.',
+      description: profileError.message || 'Failed to create user profile.',
       color: 'error'
     })
     return

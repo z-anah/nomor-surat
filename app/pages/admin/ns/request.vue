@@ -113,7 +113,8 @@
 
 <script setup lang="ts">
 import type { FungsiType, SkType } from '~/types'
-import { supabase } from '~/utils/supabase'
+
+const supabase = useSupabaseClient()
 
 const toast = useToast()
 const user = useSupabaseUser()
@@ -200,18 +201,20 @@ async function submitRequest() {
   result.value = null
 
   try {
-    const response = await $fetch('/api/ns-request', {
-      method: 'POST',
-      body: {
-        user_id: user.value.sub,
-        email: user.value.email,
-        password: form.value.password,
-        fungsi_type_id: form.value.fungsi_type_id,
-        sk_type_id: form.value.sk_type_id,
-        month: form.value.month,
-        title: form.value.title
-      }
+    // Call Supabase RPC function directly
+    const { data: response, error } = await supabase.rpc('ns_request', {
+      p_user_id: user.value.sub,
+      p_email: user.value.email,
+      p_password: form.value.password,
+      p_fungsi_type_id: form.value.fungsi_type_id,
+      p_sk_type_id: form.value.sk_type_id,
+      p_month: form.value.month,
+      p_title: form.value.title
     })
+
+    if (error) {
+      throw error
+    }
 
     result.value = response as any
 
@@ -227,7 +230,7 @@ async function submitRequest() {
   } catch (error: any) {
     toast.add({
       title: 'Error',
-      description: error.data?.statusMessage || 'Failed to generate Nomor Surat',
+      description: error.message || 'Failed to generate Nomor Surat',
       color: 'error'
     })
   } finally {

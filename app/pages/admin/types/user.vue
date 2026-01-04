@@ -63,7 +63,8 @@ import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
 import type { UserType } from '~/types'
-import { supabase } from '~/utils/supabase'
+
+const supabase = useSupabaseClient()
 
 const toast = useToast()
 const table = useTemplateRef('table')

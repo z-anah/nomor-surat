@@ -5,6 +5,8 @@ import { getPaginationRowModel } from '@tanstack/table-core'
 import type { Row } from '@tanstack/table-core'
 import type { User } from '~/types'
 
+const supabase = useSupabaseClient()
+
 const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
@@ -21,9 +23,11 @@ const columnFilters = ref([{
 const columnVisibility = ref()
 const rowSelection = ref({ 1: true })
 
-const { data, status } = await useFetch<User[]>('/api/customers', {
-  lazy: true
-})
+const { data, error } = await supabase
+  .from('customers')
+  .select('*')
+
+const status = ref(error ? 'error' : 'success')
 
 function getRowItems(row: Row<User>) {
   return [

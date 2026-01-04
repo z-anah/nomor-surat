@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { Member } from '~/types'
 
-const { data: members } = await useFetch<Member[]>('/api/members', { default: () => [] })
+const supabase = useSupabaseClient()
+
+// Replace with your actual members table if it exists
+const { data: members, error } = await supabase
+  .from('members')
+  .select('*')
 
 const q = ref('')
 

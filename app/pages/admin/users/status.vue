@@ -92,6 +92,8 @@ import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
 import type { UserStatus } from '~/types'
 
+const supabase = useSupabaseClient()
+
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 
@@ -103,9 +105,12 @@ const columnFilters = ref([{
 }])
 const columnVisibility = ref()
 
-const { data, status } = await useFetch<UserStatus[]>('/api/user-status', {
-  lazy: true
-})
+const { data, error } = await supabase
+  .from('ns_user_status')
+  .select('*')
+  .order('id', { ascending: true })
+
+const status = ref(error ? 'error' : 'success')
 
 const columns: TableColumn<UserStatus>[] = [
   {

@@ -92,7 +92,8 @@ import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
 import type { NomorSurat } from '~/types'
-import { useSupabaseClient } from '#imports'
+
+const supabase = useSupabaseClient()
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
@@ -102,7 +103,6 @@ const UIcon = resolveComponent('UIcon')
 
 const table = useTemplateRef('table')
 const router = useRouter()
-const supabase = useSupabaseClient()
 const toast = useToast()
 
 const columnFilters = ref([{
@@ -111,9 +111,30 @@ const columnFilters = ref([{
 }])
 const columnVisibility = ref()
 
-const { data, status, refresh } = await useFetch<NomorSurat[]>('/api/nomor-surat', {
-  lazy: true
-})
+const { data, error } = await supabase
+  .from('ns_nomor_surat')
+  .select(`
+    *,
+    ns_fungsi_type (fungsi_name),
+    ns_sk_type (name),
+    ns_user_profile (full_name)
+  `)
+  .order('created_at', { ascending: false })
+
+const status = ref(error ? 'error' : 'success')
+const refresh = async () => {
+  const { data: newData, error: newError } = await supabase
+    .from('ns_nomor_surat')
+    .select(`
+      *,
+      ns_fungsi_type (fungsi_name),
+      ns_sk_type (name),
+      ns_user_profile (full_name)
+    `)
+    .order('created_at', { ascending: false })
+  data.value = newData
+  status.value = newError ? 'error' : 'success'
+}
 
 const columns: TableColumn<NomorSurat>[] = [
   {
@@ -314,16 +335,16 @@ async function handleFileUpload(nomorSuratId: number, event: Event) {
   const { data: publicUrlData } = supabase.storage.from('ns').getPublicUrl(filePath)
   const publicUrl = publicUrlData.publicUrl
 
-  // Update file in DB
-  const { error: updateError } = await $fetch(`/api/nomor-surat/${nomorSuratId}/file-url`, {
-    method: 'POST',
-    body: { file: publicUrl }
-  })
+  // Update file URL directly in Supabase
+  const { error: updateError } = await supabase
+    .from('ns_nomor_surat')
+    .update({ file: publicUrl })
+    .eq('id', nomorSuratId)
 
   if (updateError) {
     toast.add({
       title: 'Update Error',
-      description: updateError.data?.statusMessage || 'Failed to update file URL.',
+      description: updateError.message || 'Failed to update file URL.',
       color: 'error'
     })
     return

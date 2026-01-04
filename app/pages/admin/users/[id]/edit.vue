@@ -18,9 +18,26 @@ const profileSchema = z.object({
 
 type ProfileSchema = z.output<typeof profileSchema>
 
-const { data: user, refresh } = await useFetch<UserProfile>(`/api/user-profiles/${id}`)
-const { data: userTypes } = await useFetch<UserType[]>('/api/user-types')
-const { data: userStatuses } = await useFetch<UserStatus[]>('/api/user-statuses')
+const { data: user } = await supabase
+  .from('ns_user_profile')
+  .select(`
+    *,
+    ns_user_type (name),
+    ns_user_status (name)
+  `)
+  .eq('id', id)
+  .single()
+
+const { data: userTypes } = await supabase
+  .from('ns_user_type')
+  .select('*')
+  .order('name', { ascending: true })
+
+const { data: userStatuses } = await supabase
+  .from('ns_user_status')
+  .select('*')
+  .order('name', { ascending: true })
+
 const profile = reactive<Partial<ProfileSchema>>({
   full_name: user.value?.full_name,
   username: user.value?.username,
@@ -63,17 +80,18 @@ async function onSubmit(event: FormSubmitEvent<ProfileSchema>) {
     submitting.value = false
     return
   }
-  const { error } = await useFetch(`/api/user-profiles/${id}`, {
-    method: 'PATCH',
-    body: {
+  const { error } = await supabase
+    .from('ns_user_profile')
+    .update({
       full_name: profile.full_name,
       username: profile.username,
       user_type_id: type.id,
       user_status_id: status.id
-    }
-  })
+    })
+    .eq('id', id)
+
   submitting.value = false
-  if (!error.value) {
+  if (!error) {
     toast.add({
       title: 'Success',
       description: 'User profile updated.',

@@ -91,7 +91,8 @@ import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
 import type { FungsiType } from '~/types'
-import { supabase } from '~/utils/supabase'
+
+const supabase = useSupabaseClient()
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
