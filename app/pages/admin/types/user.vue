@@ -63,6 +63,7 @@ import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
 import type { UserType } from '~/types'
+import { supabase } from '~/utils/supabase'
 
 const toast = useToast()
 const table = useTemplateRef('table')
@@ -73,9 +74,10 @@ const columnFilters = ref([{
 }])
 const columnVisibility = ref()
 
-const { data, status, refresh } = await useFetch<UserType[]>('/api/user-types', {
-  lazy: true
-})
+const { data, status } = await supabase
+    .from('ns_user_type')
+    .select('id, name')
+    .order('name', { ascending: true })
 
 const columns: TableColumn<UserType>[] = [
   {

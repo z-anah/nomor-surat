@@ -5,10 +5,6 @@
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-        <!-- Remove Add Modal button -->
-        <!-- <template #right>
-          <FungsiTypesAddModal @created="refresh" />
-        </template> -->
       </UDashboardNavbar>
     </template>
 
@@ -22,27 +18,6 @@
         />
 
         <div class="flex flex-wrap items-center gap-1.5">
-          <!-- Remove Delete Modal button -->
-          <!--
-          <FungsiTypesDeleteModal
-            :count="table?.tableApi?.getFilteredSelectedRowModel().rows.length"
-            @confirmed="deleteSelectedFungsiTypes"
-          >
-            <UButton
-              v-if="table?.tableApi?.getFilteredSelectedRowModel().rows.length"
-              label="Delete"
-              color="error"
-              variant="subtle"
-              icon="i-lucide-trash"
-            >
-              <template #trailing>
-                <UKbd>
-                  {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length }}
-                </UKbd>
-              </template>
-            </UButton>
-          </FungsiTypesDeleteModal>
-          -->
           <UDropdownMenu
             :items="
               table?.tableApi
@@ -96,11 +71,6 @@
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">
-          <!-- Remove selected rows info -->
-          <!--
-          {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
-          {{ table?.tableApi?.getFilteredRowModel().rows.length || 0 }} row(s) selected.
-          -->
         </div>
 
         <div class="flex items-center gap-1.5">
@@ -121,11 +91,10 @@ import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
 import type { FungsiType } from '~/types'
+import { supabase } from '~/utils/supabase'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
-// Remove UCheckbox import
-// const UCheckbox = resolveComponent('UCheckbox')
 
 const toast = useToast()
 const table = useTemplateRef('table')
@@ -135,50 +104,13 @@ const columnFilters = ref([{
   value: ''
 }])
 const columnVisibility = ref()
-// Remove rowSelection
-// const rowSelection = ref({})
 
-const { data, status, refresh } = await useFetch<FungsiType[]>('/api/fungsi-types', {
-  lazy: true
-})
-
-// Remove deleteFungsiType and deleteSelectedFungsiTypes
-/*
-async function deleteFungsiType(id: number) {
-  ...
-}
-async function deleteSelectedFungsiTypes() {
-  ...
-}
-*/
-
-// Remove getRowItems
-/*
-function getRowItems(row: Row<FungsiType>) {
-  ...
-}
-*/
+const { data, status } = await supabase
+    .from('ns_fungsi_type')
+    .select('*')
+    .order('id', { ascending: true })
 
 const columns: TableColumn<FungsiType>[] = [
-  // Remove select column
-  // {
-  //   id: 'select',
-  //   header: ({ table }) =>
-  //     h(UCheckbox, {
-  //       'modelValue': table.getIsSomePageRowsSelected()
-  //         ? 'indeterminate'
-  //         : table.getIsAllPageRowsSelected(),
-  //       'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-  //         table.toggleAllPageRowsSelected(!!value),
-  //       'ariaLabel': 'Select all'
-  //     }),
-  //   cell: ({ row }) =>
-  //     h(UCheckbox, {
-  //       'modelValue': row.getIsSelected(),
-  //       'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
-  //       'ariaLabel': 'Select row'
-  //     })
-  // },
   {
     accessorKey: 'id',
     header: 'ID'
@@ -206,33 +138,7 @@ const columns: TableColumn<FungsiType>[] = [
     accessorKey: 'fungsi_code',
     header: 'Fungsi Code',
     cell: ({ row }) => h('span', { class: 'font-mono text-muted' }, row.original.fungsi_code)
-  },
-  // Remove actions column
-  // {
-  //   id: 'actions',
-  //   cell: ({ row }) => {
-  //     return h(
-  //       'div',
-  //       { class: 'text-right' },
-  //       h(
-  //         UDropdownMenu,
-  //         {
-  //           content: {
-  //             align: 'end'
-  //           },
-  //           items: getRowItems(row)
-  //         },
-  //         () =>
-  //           h(UButton, {
-  //             icon: 'i-lucide-ellipsis-vertical',
-  //             color: 'neutral',
-  //             variant: 'ghost',
-  //             class: 'ml-auto'
-  //           })
-  //       )
-  //     )
-  //   }
-  // }
+  }
 ]
 
 const nameFilter = computed({

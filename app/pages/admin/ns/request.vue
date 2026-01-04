@@ -113,6 +113,7 @@
 
 <script setup lang="ts">
 import type { FungsiType, SkType } from '~/types'
+import { supabase } from '~/utils/supabase'
 
 const toast = useToast()
 const user = useSupabaseUser()
@@ -132,14 +133,16 @@ const result = ref<{
 } | null>(null)
 
 // Fetch Fungsi Types
-const { data: fungsiTypes } = await useFetch<FungsiType[]>('/api/fungsi-types', {
-  lazy: true
-})
+const { data: fungsiTypes } = await supabase
+    .from('ns_fungsi_type')
+    .select('*')
+    .order('id', { ascending: true })
 
 // Fetch SK Types
-const { data: skTypes } = await useFetch<SkType[]>('/api/sk-types', {
-  lazy: true
-})
+const { data: skTypes } =  await supabase
+    .from('ns_sk_type')
+    .select('*')
+    .order('id', { ascending: true })
 
 // Computed options
 const fungsiTypeOptions = computed(() => {

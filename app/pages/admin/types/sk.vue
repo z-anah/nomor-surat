@@ -91,6 +91,7 @@ import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
 import type { SkType } from '~/types'
+import { supabase } from '~/utils/supabase'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
@@ -104,9 +105,10 @@ const columnFilters = ref([{
 }])
 const columnVisibility = ref()
 
-const { data, status, refresh } = await useFetch<SkType[]>('/api/sk-types', {
-  lazy: true
-})
+const { data, status } =  await supabase
+    .from('ns_sk_type')
+    .select('*')
+    .order('id', { ascending: true })
 
 const columns: TableColumn<SkType>[] = [
   {
