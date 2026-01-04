@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import { useSupabaseUser } from '#imports'
+import { useSupabaseUser, useSupabaseClient, useRouter } from '#imports'
 
 defineProps<{
   collapsed?: boolean
@@ -13,6 +13,8 @@ const colors = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 
 const neutrals = ['slate', 'gray', 'zinc', 'neutral', 'stone']
 
 const supabaseUser = useSupabaseUser()
+const supabase = useSupabaseClient()
+const router = useRouter()
 
 const user = computed(() => {
   const name = supabaseUser.value?.user_metadata?.name || supabaseUser.value?.email || 'User'
@@ -37,7 +39,11 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   }
 }], [{
   label: 'Log out',
-  icon: 'i-lucide-log-out'
+  icon: 'i-lucide-log-out',
+  click: async () => {
+    await supabase.auth.signOut()
+    await router.push('/login')
+  }
 }]]))
 </script>
 
