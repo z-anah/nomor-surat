@@ -26,8 +26,8 @@ async function handleLogin(e: Event) {
   if (error) {
     errors.value.push(error.message)
   } else {
-    // Redirect or reload after successful login
-    window.location.href = '/'
+    const router = useRouter()
+    await router.push('/')
   }
 }
 </script>
