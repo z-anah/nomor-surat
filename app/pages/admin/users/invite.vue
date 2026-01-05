@@ -29,9 +29,8 @@ const { data: userStatuses } = await supabase
   .order('name', { ascending: true })
 
 // Only allow user_type_id=3 and user_status_id=1
-const allowedUserType = computed(() => userTypes.value?.find(t => t.id === 3))
-const allowedUserStatus = computed(() => userStatuses.value?.find(s => s.id === 1))
-
+const allowedUserType = computed(() => userTypes?.find(t => t.id === 3))
+const allowedUserStatus = computed(() => userStatuses?.find(s => s.id === 1))
 const inviteForm = reactive<Partial<InviteSchema>>({
   email: '',
   full_name: '',
@@ -44,13 +43,13 @@ const inviteForm = reactive<Partial<InviteSchema>>({
 const submitting = ref(false)
 const showConfirmModal = ref(false)
 const registeredEmail = ref('')
-const loading = computed(() => !userTypes.value || !userStatuses.value || !allowedUserType.value || !allowedUserStatus.value)
+const loading = computed(() => !userTypes || !userStatuses || !allowedUserType || !allowedUserStatus)
 
 async function onSubmit(event: FormSubmitEvent<InviteSchema>) {
   submitting.value = true
 
-  const type = allowedUserType.value
-  const status = allowedUserStatus.value
+  const type = allowedUserType
+  const status = allowedUserStatus
 
   if (!type || !status) {
     toast.add({
@@ -64,13 +63,18 @@ async function onSubmit(event: FormSubmitEvent<InviteSchema>) {
 
   // Step 1: Signup in Supabase Auth
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    // with redirect option
     email: inviteForm.email!,
     password: inviteForm.password!,
     options: {
+      emailRedirectTo: 'https://z-anah.github.io/nomor-surat/',
       data: {
         full_name: inviteForm.full_name,
-        username: inviteForm.username
-      }
+        username: inviteForm.username,
+        user_type_id: type.value.id,
+        user_status_id: status.value.id
+      },
+
     }
   })
 
@@ -102,8 +106,8 @@ async function onSubmit(event: FormSubmitEvent<InviteSchema>) {
       id: userId,
       full_name: inviteForm.full_name,
       username: inviteForm.username,
-      user_type_id: type.id,
-      user_status_id: status.id,
+      user_type_id: type.value.id,
+      user_status_id: status.value.id,
       email: inviteForm.email
     })
 

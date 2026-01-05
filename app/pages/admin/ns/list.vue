@@ -115,7 +115,7 @@ const { data, error } = await supabase
   .from('ns_nomor_surat')
   .select(`
     *,
-    ns_fungsi_type (fungsi_name),
+    ns_fungsi_type (fungsi_code),
     ns_sk_type (name),
     ns_user_profile (full_name)
   `)
@@ -127,7 +127,7 @@ const refresh = async () => {
     .from('ns_nomor_surat')
     .select(`
       *,
-      ns_fungsi_type (fungsi_name),
+      ns_fungsi_type (fungsi_code),
       ns_sk_type (name),
       ns_user_profile (full_name)
     `)
@@ -169,18 +169,18 @@ const columns: TableColumn<NomorSurat>[] = [
   {
     accessorKey: 'fungsi_name',
     header: 'Fungsi',
-    cell: ({ row }) => h('span', { class: 'text-sm text-muted' }, row.original.fungsi_name || '-')
+    cell: ({ row }) => h('span', { class: 'text-sm text-muted' }, row.original.ns_fungsi_type?.fungsi_code || '-')
   },
   {
     accessorKey: 'sk_type_name',
     header: 'SK Type',
-    cell: ({ row }) => h('span', { class: 'text-sm text-muted' }, row.original.sk_type_name || '-')
+    cell: ({ row }) => h('span', { class: 'text-sm text-muted' }, row.original.ns_sk_type?.name || '-')
   },
   {
     accessorKey: 'user_name',
     header: 'Created By',
     cell: ({ row }) => {
-      const userName = row.original.user_name || '-'
+      const userName = row.original.ns_user_profile?.full_name || '-'
       if (userName === '-') return h('span', { class: 'text-sm text-muted' }, '-')
       
       return h(UTooltip, { text: userName }, {

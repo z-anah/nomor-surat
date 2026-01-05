@@ -113,9 +113,9 @@
 
 <script setup lang="ts">
 import type { FungsiType, SkType } from '~/types'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 const supabase = useSupabaseClient()
-
 const toast = useToast()
 const user = useSupabaseUser()
 
@@ -147,17 +147,17 @@ const { data: skTypes } =  await supabase
 
 // Computed options
 const fungsiTypeOptions = computed(() => {
-  return fungsiTypes.value?.map(f => ({
-    label: `${f.fungsi_name} (${f.fungsi_code})`,
+  return (fungsiTypes ?? []).map(f => ({
+    label: `${f.fungsi_code} (${f.fungsi_name})`,
     value: f.id
-  })) || []
+  }))
 })
 
 const skTypeOptions = computed(() => {
-  return skTypes.value?.map(s => ({
+  return (skTypes ?? []).map(s => ({
     label: s.name,
     value: s.id
-  })) || []
+  }))
 })
 
 const monthOptions = [
@@ -183,9 +183,30 @@ const isFormValid = computed(() => {
     form.value.password
 })
 
-// Submit request
+// Helper: Convert month number to Roman numeral
+function toRomanNumeral(num: number): string {
+  const romanNumerals: [number, string][] = [
+    [12, 'XII'],
+    [11, 'XI'],
+    [10, 'X'],
+    [9, 'IX'],
+    [8, 'VIII'],
+    [7, 'VII'],
+    [6, 'VI'],
+    [5, 'V'],
+    [4, 'IV'],
+    [3, 'III'],
+    [2, 'II'],
+    [1, 'I']
+  ]
+  for (const [value, numeral] of romanNumerals) {
+    if (num === value) return numeral
+  }
+  return ''
+}
+
+// Submit request (all logic client-side)
 async function submitRequest() {
-    
   if (!user.value?.sub || !user.value?.email) {
     toast.add({
       title: 'Error',
@@ -194,29 +215,94 @@ async function submitRequest() {
     })
     return
   }
-
   if (!isFormValid.value) return
 
   isSubmitting.value = true
   result.value = null
 
+  // 1. Authenticate with password (create a new client for password check)
+  const tempClient = createSupabaseClient(
+    supabase.supabaseUrl,
+    supabase.supabaseKey
+  )
+  let tempSession
   try {
-    // Call Supabase RPC function directly
-    const { data: response, error } = await supabase.rpc('ns_request', {
-      p_user_id: user.value.sub,
-      p_email: user.value.email,
-      p_password: form.value.password,
-      p_fungsi_type_id: form.value.fungsi_type_id,
-      p_sk_type_id: form.value.sk_type_id,
-      p_month: form.value.month,
-      p_title: form.value.title
+    const { data, error } = await tempClient.auth.signInWithPassword({
+      email: user.value.email,
+      password: form.value.password
     })
+    if (error) throw error
+    tempSession = data.session
+    if (!tempSession) throw new Error('Authentication failed')
+  } catch (error: any) {
+    toast.add({
+      title: 'Error',
+      description: 'Invalid password. Please try again.',
+      color: 'error'
+    })
+    isSubmitting.value = false
+    return
+  }
 
-    if (error) {
-      throw error
+  try {
+    // 2. Increment and get new number
+    const { data: newNumber, error: rpcError } = await tempClient
+      .rpc('increment_ns_sk_number', { p_sk_type_id: form.value.sk_type_id })
+    if (rpcError) throw rpcError
+
+    // 3. Fetch fungsi_code
+    const { data: fungsiData, error: fungsiError } = await tempClient
+      .from('ns_fungsi_type')
+      .select('fungsi_code')
+      .eq('id', form.value.fungsi_type_id)
+      .single()
+    if (fungsiError) throw fungsiError
+
+    // 4. Fetch sk_type name
+    const { data: skTypeData, error: skTypeError } = await tempClient
+      .from('ns_sk_type')
+      .select('name')
+      .eq('id', form.value.sk_type_id)
+      .single()
+    if (skTypeError) throw skTypeError
+
+    // 5. Generate nomor surat
+    const currentYear = new Date().getFullYear()
+    const monthRoman = toRomanNumeral(form.value.month)
+    const generatedNomorSurat = `${newNumber}/${fungsiData.fungsi_code}/${skTypeData.name}/${monthRoman}/${currentYear}`
+
+    // 6. Insert into ns_nomor_surat
+    const { data: insertedData, error: insertError } = await tempClient
+      .from('ns_nomor_surat')
+      .insert({
+        user_id: user.value.sub,
+        title: form.value.title,
+        generated_nomor_surat: generatedNomorSurat,
+        fungsi_type_id: form.value.fungsi_type_id,
+        sk_type_id: form.value.sk_type_id
+      })
+      .select()
+      .single()
+    if (insertError) throw insertError
+
+    // 7. Fetch updated sk_number_temp (optional, for display)
+    const { data: skNumberTemp, error: tempError } = await tempClient
+      .from('ns_sk_number_temp')
+      .select('*, ns_sk_type (name)')
+      .eq('sk_type_id', form.value.sk_type_id)
+      .single()
+    if (tempError) throw tempError
+
+    result.value = {
+      nomor_surat: insertedData,
+      sk_number_temp: {
+        id: skNumberTemp.id,
+        sk_type_id: skNumberTemp.sk_type_id,
+        last_number: skNumberTemp.last_number,
+        year: skNumberTemp.year,
+        sk_type_name: skNumberTemp.ns_sk_type?.name || null
+      }
     }
-
-    result.value = response as any
 
     toast.add({
       title: 'Success',
@@ -234,6 +320,8 @@ async function submitRequest() {
       color: 'error'
     })
   } finally {
+    // 8. Sign out temp session
+    await tempClient.auth.signOut()
     isSubmitting.value = false
   }
 }

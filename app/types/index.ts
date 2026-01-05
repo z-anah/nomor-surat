@@ -37,6 +37,8 @@ export interface UserProfile {
   created_at: string
   user_type_name?: string | null
   user_status_name?: string | null
+  ns_user_type?: UserType | null
+  ns_user_status?: UserStatus | null
 }
 
 export interface NomorSurat {
@@ -51,4 +53,7 @@ export interface NomorSurat {
   sk_type_name?: string
   user_name?: string
   file?: string // changed from file_url to file
+  ns_fungsi_type?: FungsiType
+  ns_sk_type?: SkType
+  ns_user_profile?: UserProfile
 }

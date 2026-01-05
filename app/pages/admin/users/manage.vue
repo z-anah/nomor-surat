@@ -26,27 +26,6 @@
         />
 
         <div class="flex flex-wrap items-center gap-1.5">
-          <!-- Remove Delete Modal button -->
-          <!--
-          <UserProfilesDeleteModal
-            :count="table?.tableApi?.getFilteredSelectedRowModel().rows.length"
-            @confirmed="deleteSelectedUserProfiles"
-          >
-            <UButton
-              v-if="table?.tableApi?.getFilteredSelectedRowModel().rows.length"
-              label="Delete"
-              color="error"
-              variant="subtle"
-              icon="i-lucide-trash"
-            >
-              <template #trailing>
-                <UKbd>
-                  {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length }}
-                </UKbd>
-              </template>
-            </UButton>
-          </UserProfilesDeleteModal>
-          -->
           <UDropdownMenu
             :items="
               table?.tableApi
@@ -127,6 +106,8 @@ import { getPaginationRowModel } from '@tanstack/table-core'
 import type { UserProfile } from '~/types'
 import { useRouter } from 'vue-router'
 
+const supabase = useSupabaseClient()
+
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UBadge = resolveComponent('UBadge')
@@ -141,7 +122,7 @@ const columnFilters = ref([
 ])
 const columnVisibility = ref()
 
-const { data, status, refresh } = await supabase
+const { data, status } = await supabase
     .from('ns_user_profile')
     .select(`
       id,
@@ -202,9 +183,9 @@ const columns: TableColumn<UserProfile>[] = [
         {
           class: 'capitalize',
           variant: 'subtle',
-          color: userTypeColors[(row.original.user_type_name || '').toLowerCase()] || 'primary'
+          color: userTypeColors[(row.original.ns_user_type?.name || '').toLowerCase()] || 'primary'
         },
-        () => row.original.user_type_name || '-'
+        () => row.original.ns_user_type?.name || '-'
       )
   },
   {
@@ -216,9 +197,9 @@ const columns: TableColumn<UserProfile>[] = [
         {
           class: 'capitalize',
           variant: 'subtle',
-          color: userStatusColors[(row.original.user_status_name || '').toLowerCase()] || 'neutral'
+          color: userStatusColors[(row.original.ns_user_status?.name || '').toLowerCase()] || 'neutral'
         },
-        () => row.original.user_status_name || '-'
+        () => row.original.ns_user_status?.name || '-'
       )
   },
   {

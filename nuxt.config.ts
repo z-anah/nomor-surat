@@ -1,32 +1,39 @@
 export default defineNuxtConfig({
+  // GitHub Pages = SPA only
   ssr: false,
 
+  // Required for GitHub Pages subpath
   app: {
     baseURL: '/nomor-surat/',
   },
 
+  // Static preset for GitHub Pages
   nitro: {
     preset: 'github_pages',
   },
-  
+
   modules: [
     '@nuxtjs/supabase',
-    '@nuxt/eslint',
     '@nuxt/ui',
     '@vueuse/nuxt',
+    '@nuxt/eslint',
   ],
 
-  devtools: {
-    enabled: true
+  // ✅ Supabase SPA auth configuration
+  supabase: {
+    // redirect: false,
+    clientOptions: {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    },
   },
 
-  css: ['~/assets/css/main.css'],
-
-  routeRules: {
-    '/api/**': {
-      cors: true
-    }
-  },
+  css: [
+    '~/assets/css/main.css',
+  ],
 
   compatibilityDate: '2024-07-11',
 
@@ -34,18 +41,16 @@ export default defineNuxtConfig({
     config: {
       stylistic: {
         commaDangle: 'never',
-        braceStyle: '1tbs'
-      }
-    }
+        braceStyle: '1tbs',
+      },
+    },
   },
 
-  
+  // Public runtime config only (SPA)
   runtimeConfig: {
-    supabaseUrl: process.env.SUPABASE_URL,
-    supabaseKey: process.env.SUPABASE_KEY,
     public: {
       supabaseUrl: process.env.SUPABASE_URL,
-      supabaseKey: process.env.SUPABASE_KEY
-    }
-  }
+      supabaseKey: process.env.SUPABASE_KEY,
+    },
+  },
 })
