@@ -58,7 +58,7 @@ const links = [
     type: 'trigger',
     children: [
       {
-        label: 'Create Personalized Nomor Surat',
+        label: 'Personalized Nomor Surat',
         to: '/admin/ns/create-personalized',
         onSelect: () => { open.value = false }
       },

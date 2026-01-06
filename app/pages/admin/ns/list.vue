@@ -109,7 +109,10 @@ const columnFilters = ref([{
   id: 'title',
   value: ''
 }])
-const columnVisibility = ref()
+const columnVisibility = ref({
+  fungsi_name: false,
+  sk_type_name: false
+})
 
 const { data, error } = await supabase
   .from('ns_nomor_surat')

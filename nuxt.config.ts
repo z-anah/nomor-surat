@@ -21,14 +21,15 @@ export default defineNuxtConfig({
 
   // ✅ Supabase SPA auth configuration
   supabase: {
-    // redirect: false,
+    redirect: false,
     clientOptions: {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-      },
-    },
+        flowType: 'pkce'
+      }
+    }
   },
 
   css: [

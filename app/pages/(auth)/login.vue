@@ -10,24 +10,34 @@ const loginForm = reactive({
   password: ''
 })
 
-const errors = ref<string[]>([])
-
+const router = useRouter()
 const loading = ref(false)
+const errors = ref<string[]>([])
 
 async function handleLogin(e: Event) {
   e.preventDefault()
   errors.value = []
   loading.value = true
-  const { error } = await supabase.auth.signInWithPassword({
-    email: loginForm.email,
-    password: loginForm.password
-  })
-  loading.value = false
-  if (error) {
-    errors.value.push(error.message)
-  } else {
-    const router = useRouter()
-    await router.push('/')
+  
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginForm.email,
+      password: loginForm.password
+    })
+    
+    if (error) {
+      errors.value.push(error.message)
+      return
+    }
+    
+    if (data?.session) {
+      // Nuxt's @nuxtjs/supabase handles session persistence automatically
+      await router.push('/')
+    }
+  } catch (err: any) {
+    errors.value.push(err.message || 'Login failed')
+  } finally {
+    loading.value = false
   }
 }
 </script>

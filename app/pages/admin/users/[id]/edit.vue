@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import type { UserProfile, UserStatus } from '~/types'
 
 const supabase = useSupabaseClient()
 
@@ -27,7 +28,7 @@ const { data: user } = await supabase
     ns_user_status (name)
   `)
   .eq('id', id)
-  .single()
+  .single<UserProfile>()
 
 const { data: userTypes } = await supabase
   .from('ns_user_type')
@@ -39,29 +40,31 @@ const { data: userStatuses } = await supabase
   .select('*')
   .order('name', { ascending: true })
 
+console.log(user)
+
 const profile = reactive<Partial<ProfileSchema>>({
-  full_name: user.value?.full_name,
-  username: user.value?.username,
-  user_type_name: user.value?.user_type_name ?? '',
-  user_status_name: user.value?.user_status_name ?? ''
+  full_name: user?.full_name,
+  username: user?.username,
+  user_type_name: user?.ns_user_type?.name || '',
+  user_status_name: user?.ns_user_status?.name || ''
 })
 
 const submitting = ref(false)
 
 // Wait for userTypes and userStatuses to be loaded before rendering the form
-const loading = computed(() => !user.value || !userTypes.value || !userStatuses.value)
+const loading = computed(() => !user || !userTypes || !userStatuses)
 
 const userTypeOptions = computed(() => {
-  if (!userTypes.value) return []
-  const options = userTypes.value.map(t => t.name)
+  if (!userTypes) return []
+  const options = userTypes.map(t => t.name)
   if (profile.user_type_name && !options.includes(profile.user_type_name)) {
     options.push(profile.user_type_name)
   }
   return options
 })
 const userStatusOptions = computed(() => {
-  if (!userStatuses.value) return []
-  const options = userStatuses.value.map(s => s.name)
+  if (!userStatuses) return []
+  const options = userStatuses.map(s => s.name)
   if (profile.user_status_name && !options.includes(profile.user_status_name)) {
     options.push(profile.user_status_name)
   }
@@ -70,8 +73,8 @@ const userStatusOptions = computed(() => {
 
 async function onSubmit(event: FormSubmitEvent<ProfileSchema>) {
   submitting.value = true
-  const type = userTypes.value?.find(t => t.name === profile.user_type_name)
-  const status = userStatuses.value?.find(s => s.name === profile.user_status_name)
+  const type = userTypes?.find(t => t.name === profile.user_type_name)
+  const status = userStatuses?.find(s => s.name === profile.user_status_name)
   if (!type || !status) {
     toast.add({
       title: 'Error',

@@ -29,6 +29,25 @@ useSeoMeta({
   twitterImage: 'https://ui.nuxt.com/assets/templates/nuxt/dashboard-light.png',
   twitterCard: 'summary_large_image'
 })
+
+const supabase = useSupabaseClient()
+const user = useSupabaseUser()
+
+// Restore session on app mount
+onMounted(async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (session) {
+    await supabase.auth.setSession(session)
+  }
+})
+
+// Watch for session changes
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    navigateTo('/login')
+  }
+})
 </script>
 
 <template>

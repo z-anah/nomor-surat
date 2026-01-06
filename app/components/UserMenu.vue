@@ -28,7 +28,17 @@ const user = computed(() => {
   }
 })
 
-const items = computed<DropdownMenuItem[][]>(() => ([[{
+const handleLogout = async () => {
+  try {
+    await supabase.auth.signOut()
+    await router.push('/login')
+  } catch (error) {
+    console.error('Logout failed:', error)
+    await router.push('/login')
+  }
+}
+
+const items = computed<DropdownMenuItem[][]>(() => [[{
   type: 'label',
   label: user.value.name,
   // Use avatar with initial
@@ -40,12 +50,11 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
 }], [{
   label: 'Log out',
   icon: 'i-lucide-log-out',
-  click: async () => {
-    await supabase.auth.signOut()
-    await router.push('/login')
-  }
-}]]))
+  onSelect: handleLogout
+}]])
 </script>
+
+
 
 <template>
   <UDropdownMenu
