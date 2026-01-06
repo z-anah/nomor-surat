@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-const route = useRoute()
-const toast = useToast()
-
 const open = ref(false)
 
 const links = [
@@ -77,13 +74,45 @@ const links = [
 ]
 ] satisfies NavigationMenuItem[][]
 
+const links_editor = [
+[
+  {
+    label: 'Nomor Surat List',
+    to: '/admin/ns/list',
+    onSelect: () => { open.value = false }
+  },
+  {
+    label: 'Request Nomor Surat',
+    to: '/admin/ns/request',
+    onSelect: () => { open.value = false }
+  }
+]
+] satisfies NavigationMenuItem[][]
+
+const userTypeId = ref<number | null>(null)
+
 const groups = computed(() => [{
   id: 'links',
   label: 'Go to',
-  items: links.flat()
+  items: (userTypeId.value === 1 ? links : links_editor).flat()
 }])
 
+const sidebarLinks = computed(() => userTypeId.value === 1 ? links[0] : links_editor[0])
+
 onMounted(async () => {
+  // Fetch user profile and set userTypeId
+  const user = useSupabaseUser()
+  const supabase = useSupabaseClient()
+  if (user.value) {
+    const { data, error } = await supabase
+      .from('ns_user_profile')
+      .select('user_type_id')
+      .eq('id', user.value.sub)
+      .single()
+    if (!error && data) {
+      userTypeId.value = data.user_type_id
+    }
+  }
 })
 </script>
 
@@ -97,7 +126,7 @@ onMounted(async () => {
 
       <template #default="{ collapsed }">
         <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
-        <UNavigationMenu :collapsed="collapsed" :items="links[0]" orientation="vertical" tooltip popover />
+        <UNavigationMenu :collapsed="collapsed" :items="sidebarLinks" orientation="vertical" tooltip popover />
       </template>
 
       <template #footer="{ collapsed }">

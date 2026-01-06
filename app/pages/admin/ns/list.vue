@@ -94,6 +94,7 @@ import { getPaginationRowModel } from '@tanstack/table-core'
 import type { NomorSurat } from '~/types'
 
 const supabase = useSupabaseClient()
+const user = useSupabaseUser()
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
@@ -114,7 +115,26 @@ const columnVisibility = ref({
   sk_type_name: false
 })
 
-const { data, error } = await supabase
+const userTypeId = ref<number | null>(null)
+const userProfileId = ref<string | null>(null)
+
+if (user.value) {
+  // Fetch user profile to get user_type_id and id
+  console.log(user.value.sub);
+  
+  const { data: profile, error: profileError } = await supabase
+    .from('ns_user_profile')
+    .select('id, user_type_id')
+    .eq('id', user.value.sub)
+    .single()
+  console.log(profile);
+  if (!profileError && profile) {
+    userTypeId.value = profile.user_type_id
+    userProfileId.value = profile.id
+  }
+}
+
+let query = supabase
   .from('ns_nomor_surat')
   .select(`
     *,
@@ -124,9 +144,16 @@ const { data, error } = await supabase
   `)
   .order('created_at', { ascending: false })
 
+if (userTypeId.value === 3 && userProfileId.value) {
+  // Editor: only their own nomor surat
+  query = query.eq('user_id', userProfileId.value)
+}
+
+const { data, error } = await query
+
 const status = ref(error ? 'error' : 'success')
 const refresh = async () => {
-  const { data: newData, error: newError } = await supabase
+  let refreshQuery = supabase
     .from('ns_nomor_surat')
     .select(`
       *,
@@ -135,6 +162,12 @@ const refresh = async () => {
       ns_user_profile (full_name)
     `)
     .order('created_at', { ascending: false })
+
+  if (userTypeId.value === 3 && userProfileId.value) {
+    refreshQuery = refreshQuery.eq('user_id', userProfileId.value)
+  }
+
+  const { data: newData, error: newError } = await refreshQuery
   data.value = newData
   status.value = newError ? 'error' : 'success'
 }
