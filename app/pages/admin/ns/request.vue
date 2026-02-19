@@ -61,6 +61,18 @@
                   />
                 </UFormField>
 
+
+                <!-- Quantity Input -->
+                <UFormField label="Quantity" required hint="How many Nomor Surat to generate">
+                  <UInput
+                    v-model.number="form.quantity"
+                    type="number"
+                    min="1"
+                    placeholder="Enter quantity (default 1)"
+                    class="w-full"
+                  />
+                </UFormField>
+
                 <!-- Password Input -->
                 <UFormField label="Password" required hint="Enter your account password to confirm">
                   <UInput
@@ -92,12 +104,14 @@
                 </h3>
               </template>
               <div class="space-y-4">
-                <div v-if="result">
+                <div v-if="result && result.nomor_surat_list && result.nomor_surat_list.length">
                   <p class="text-green-600 font-semibold">Request Successful</p>
                   <p class="text-sm text-muted">Generated Nomor Surat:</p>
-                  <p class="text-xl font-mono font-bold text-highlighted">
-                    {{ result.nomor_surat.generated_nomor_surat }}
-                  </p>
+                  <ul class="space-y-1">
+                    <li v-for="(item, idx) in result.nomor_surat_list" :key="idx">
+                      <span class="text-xl font-mono font-bold text-highlighted">{{ item.generated_nomor_surat }}</span>
+                    </li>
+                  </ul>
                 </div>
                 <div v-else>
                   <p class="text-sm text-muted">No Nomor Surat generated yet.</p>
@@ -125,12 +139,13 @@ const form = ref({
   fungsi_type_id: null as number | null,
   sk_type_id: null as number | null,
   month: new Date().getMonth() + 1,
+  quantity: 1,
   password: ''
 })
 
 const isSubmitting = ref(false)
 const result = ref<{
-  nomor_surat: { generated_nomor_surat: string }
+  nomor_surat_list: Array<{ generated_nomor_surat: string }>
 } | null>(null)
 
 // Fetch Fungsi Types
@@ -180,7 +195,10 @@ const isFormValid = computed(() => {
     form.value.fungsi_type_id &&
     form.value.sk_type_id &&
     form.value.month &&
-    form.value.password
+    form.value.password &&
+    form.value.quantity &&
+    Number.isInteger(form.value.quantity) &&
+    form.value.quantity > 0
 })
 
 // Helper: Convert month number to Roman numeral
@@ -234,7 +252,7 @@ async function submitRequest() {
     if (error) throw error
     tempSession = data.session
     if (!tempSession) throw new Error('Authentication failed')
-  } catch (error: any) {
+  } catch (error) {
     toast.add({
       title: 'Error',
       description: 'Invalid password. Please try again.',
@@ -245,75 +263,54 @@ async function submitRequest() {
   }
 
   try {
-    // 2. Increment and get new number
-    const { data: newNumber, error: rpcError } = await tempClient
-      .rpc('increment_ns_sk_number', { p_sk_type_id: form.value.sk_type_id })
-    if (rpcError) throw rpcError
-
-    // 3. Fetch fungsi_code
-    const { data: fungsiData, error: fungsiError } = await tempClient
-      .from('ns_fungsi_type')
-      .select('fungsi_code')
-      .eq('id', form.value.fungsi_type_id)
-      .single()
+    // Fetch fungsi_code and sk_type name once
+    const [{ data: fungsiData, error: fungsiError }, { data: skTypeData, error: skTypeError }] = await Promise.all([
+      tempClient.from('ns_fungsi_type').select('fungsi_code').eq('id', form.value.fungsi_type_id).single(),
+      tempClient.from('ns_sk_type').select('name').eq('id', form.value.sk_type_id).single()
+    ])
     if (fungsiError) throw fungsiError
-
-    // 4. Fetch sk_type name
-    const { data: skTypeData, error: skTypeError } = await tempClient
-      .from('ns_sk_type')
-      .select('name')
-      .eq('id', form.value.sk_type_id)
-      .single()
     if (skTypeError) throw skTypeError
 
-    // 5. Generate nomor surat
     const currentYear = new Date().getFullYear()
     const monthRoman = toRomanNumeral(form.value.month)
-    const generatedNomorSurat = `${newNumber}/${fungsiData.fungsi_code}/${skTypeData.name}/${monthRoman}/${currentYear}`
-
-    // 6. Insert into ns_nomor_surat
-    const { data: insertedData, error: insertError } = await tempClient
-      .from('ns_nomor_surat')
-      .insert({
-        user_id: user.value.sub,
-        title: form.value.title,
-        generated_nomor_surat: generatedNomorSurat,
-        fungsi_type_id: form.value.fungsi_type_id,
-        sk_type_id: form.value.sk_type_id
-      })
-      .select()
-      .single()
-    if (insertError) throw insertError
-
-    // 7. Fetch updated sk_number_temp (optional, for display)
-    const { data: skNumberTemp, error: tempError } = await tempClient
-      .from('ns_sk_number_temp')
-      .select('*, ns_sk_type (name)')
-      .eq('sk_type_id', form.value.sk_type_id)
-      .single()
-    if (tempError) throw tempError
+    const quantity = form.value.quantity
+    const nomorSuratList = []
+    for (let i = 0; i < quantity; i++) {
+      // Increment and get new number for each
+      const { data: newNumber, error: rpcError } = await tempClient.rpc('increment_ns_sk_number', { p_sk_type_id: form.value.sk_type_id })
+      if (rpcError) throw rpcError
+      const generatedNomorSurat = `${newNumber}/${fungsiData.fungsi_code}/${skTypeData.name}/${monthRoman}/${currentYear}`
+      // Insert into ns_nomor_surat
+      const { data: insertedData, error: insertError } = await tempClient
+        .from('ns_nomor_surat')
+        .insert({
+          user_id: user.value.sub,
+          title: form.value.title,
+          generated_nomor_surat: generatedNomorSurat,
+          fungsi_type_id: form.value.fungsi_type_id,
+          sk_type_id: form.value.sk_type_id
+        })
+        .select()
+        .single()
+      if (insertError) throw insertError
+      nomorSuratList.push({ generated_nomor_surat: generatedNomorSurat })
+    }
 
     result.value = {
-      nomor_surat: insertedData,
-      sk_number_temp: {
-        id: skNumberTemp.id,
-        sk_type_id: skNumberTemp.sk_type_id,
-        last_number: skNumberTemp.last_number,
-        year: skNumberTemp.year,
-        sk_type_name: skNumberTemp.ns_sk_type?.name || null
-      }
+      nomor_surat_list: nomorSuratList
     }
 
     toast.add({
       title: 'Success',
-      description: 'Nomor Surat generated successfully',
+      description: `Generated ${quantity} Nomor Surat successfully`,
       color: 'success'
     })
 
     // Reset form
     form.value.title = ''
     form.value.password = ''
-  } catch (error: any) {
+    form.value.quantity = 1
+  } catch (error) {
     toast.add({
       title: 'Error',
       description: error.message || 'Failed to generate Nomor Surat',
