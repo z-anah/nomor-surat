@@ -85,6 +85,47 @@
       </div>
     </template>
   </UDashboardPanel>
+
+  <!-- Edit Modal -->
+  <UModal v-model:open="showEditModal" title="Edit Nomor Surat">
+    <template #body>
+      <div class="space-y-4 p-4">
+        <UFormField label="Title">
+          <UInput v-model="editForm.title" class="w-full" required />
+        </UFormField>
+        <UFormField label="Replace Attachment (optional)">
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            class="block w-full text-sm"
+            @change="onEditFileChange"
+          />
+          <div v-if="editForm.currentFile" class="text-xs mt-1 text-muted">
+            Current: <a :href="editForm.currentFile" target="_blank" class="text-primary underline">View file</a>
+          </div>
+        </UFormField>
+      </div>
+    </template>
+    <template #footer>
+      <div class="flex justify-end gap-2 p-4">
+        <UButton color="neutral" variant="ghost" @click="showEditModal = false">Cancel</UButton>
+        <UButton color="primary" :loading="editLoading" @click="handleEditSubmit">Save</UButton>
+      </div>
+    </template>
+  </UModal>
+
+  <!-- Delete Confirm Modal -->
+  <UModal v-model:open="showDeleteModal" title="Delete Nomor Surat">
+    <template #body>
+      <p class="p-4">Are you sure you want to delete <strong>{{ deleteTarget?.generated_nomor_surat }}</strong>? This action cannot be undone.</p>
+    </template>
+    <template #footer>
+      <div class="flex justify-end gap-2 p-4">
+        <UButton color="neutral" variant="ghost" @click="showDeleteModal = false">Cancel</UButton>
+        <UButton color="error" :loading="deleteLoading" @click="handleDeleteConfirm">Delete</UButton>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
@@ -117,6 +158,7 @@ const columnVisibility = ref({
 
 const userTypeId = ref<number | null>(null)
 const userProfileId = ref<string | null>(null)
+const isAdmin = ref(false)
 
 if (user.value) {
   // Fetch user profile to get user_type_id and id
@@ -124,13 +166,14 @@ if (user.value) {
   
   const { data: profile, error: profileError } = await supabase
     .from('ns_user_profile')
-    .select('id, user_type_id')
+    .select('id, user_type_id, ns_user_type(name)')
     .eq('id', user.value.sub)
     .single()
   console.log(profile);
   if (!profileError && profile) {
     userTypeId.value = profile.user_type_id
     userProfileId.value = profile.id
+    isAdmin.value = (profile.ns_user_type as any)?.name === 'admin'
   }
 }
 
@@ -259,8 +302,32 @@ const columns: TableColumn<NomorSurat>[] = [
     cell: ({ row }) => {
       const fileUrl = row.original.file
       const progress = uploadProgress.value[row.original.id]
-      // Set a fixed width for the actions cell
-      return h('div', { style: { width: '100px', display: 'flex', justifyContent: 'center' } }, [
+      const isLast = row.original.id === latestId.value
+      return h('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+        // Edit button - admin only
+        ...(isAdmin.value ? [
+          h(UButton, {
+            icon: 'i-lucide-pencil',
+            color: 'neutral',
+            variant: 'ghost',
+            title: 'Edit title / file',
+            size: 'sm',
+            onClick: () => openEditModal(row.original)
+          })
+        ] : []),
+        // Delete button - admin only, last record only
+        ...(isAdmin.value ? [
+          h(UButton, {
+            icon: 'i-lucide-trash-2',
+            color: 'error',
+            variant: 'ghost',
+            title: isLast ? 'Delete' : 'Can only delete the latest record first',
+            size: 'sm',
+            disabled: !isLast,
+            onClick: () => isLast && openDeleteModal(row.original)
+          })
+        ] : []),
+        // File view / upload
         progress !== undefined && progress < 100
           ? h(
               resolveComponent('UProgress'),
@@ -280,6 +347,7 @@ const columns: TableColumn<NomorSurat>[] = [
                 color: 'primary',
                 variant: 'ghost',
                 title: 'See file',
+                size: 'sm',
                 onClick: () => {
                   window.open(fileUrl, '_blank')
                 }
@@ -293,6 +361,7 @@ const columns: TableColumn<NomorSurat>[] = [
                   color: 'primary',
                   variant: 'ghost',
                   title: 'Upload file',
+                  size: 'sm',
                   onClick: () => {
                     fileInputRefs.value[row.original.id]?.click()
                   }
@@ -310,6 +379,12 @@ const columns: TableColumn<NomorSurat>[] = [
     }
   }
 ]
+
+// Latest record id (highest id = last created, must be deleted first)
+const latestId = computed(() => {
+  if (!data.value || !(data.value as any[]).length) return null
+  return (data.value as any[]).reduce((max: number, row: any) => row.id > max ? row.id : max, (data.value as any[])[0].id)
+})
 
 const searchFilter = computed({
   get: (): string => {
@@ -329,6 +404,95 @@ const pagination = ref({
 const fileInputRefs = ref<{ [key: number]: HTMLInputElement | null }>({})
 // Track upload progress per row
 const uploadProgress = ref<{ [key: number]: number }>({})
+
+// --- Edit modal ---
+const showEditModal = ref(false)
+const editLoading = ref(false)
+const editForm = ref({ id: null as number | null, title: '', currentFile: '' })
+const editFileObj = ref<File | null>(null)
+
+function openEditModal(row: any) {
+  editForm.value = { id: row.id, title: row.title, currentFile: row.file || '' }
+  editFileObj.value = null
+  showEditModal.value = true
+}
+
+function onEditFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  editFileObj.value = input.files?.[0] ?? null
+}
+
+async function handleEditSubmit() {
+  if (!editForm.value.id) return
+  editLoading.value = true
+  let fileUrl = editForm.value.currentFile
+
+  if (editFileObj.value) {
+    const file = editFileObj.value
+    const ext = file.name.split('.').pop()
+    const filePath = `${Date.now()}.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('ns')
+      .upload(filePath, file, { upsert: true })
+    if (uploadError) {
+      toast.add({ title: 'Upload Error', description: uploadError.message, color: 'error' })
+      editLoading.value = false
+      return
+    }
+    const { data: urlData } = supabase.storage.from('ns').getPublicUrl(filePath)
+    fileUrl = urlData.publicUrl
+  }
+
+  const { error: updateError } = await supabase
+    .from('ns_nomor_surat')
+    .update({ title: editForm.value.title, file: fileUrl })
+    .eq('id', editForm.value.id)
+
+  editLoading.value = false
+  if (updateError) {
+    toast.add({ title: 'Update Error', description: updateError.message, color: 'error' })
+    return
+  }
+  toast.add({ title: 'Saved', description: 'Nomor surat updated.', color: 'success', duration: 2000 })
+  showEditModal.value = false
+  refresh()
+}
+
+// --- Delete modal ---
+const showDeleteModal = ref(false)
+const deleteLoading = ref(false)
+const deleteTarget = ref<any>(null)
+
+function openDeleteModal(row: any) {
+  deleteTarget.value = row
+  showDeleteModal.value = true
+}
+
+async function handleDeleteConfirm() {
+  if (!deleteTarget.value) return
+  deleteLoading.value = true
+  // Remove file from storage if exists
+  if (deleteTarget.value.file) {
+    const parts = deleteTarget.value.file.split('/')
+    const fileName = parts[parts.length - 1]
+    if (fileName) {
+      await supabase.storage.from('ns').remove([fileName])
+    }
+  }
+  const { error: deleteError } = await supabase
+    .from('ns_nomor_surat')
+    .delete()
+    .eq('id', deleteTarget.value.id)
+  deleteLoading.value = false
+  if (deleteError) {
+    toast.add({ title: 'Delete Error', description: deleteError.message, color: 'error' })
+    return
+  }
+  toast.add({ title: 'Deleted', description: 'Nomor surat deleted.', color: 'success', duration: 2000 })
+  showDeleteModal.value = false
+  deleteTarget.value = null
+  refresh()
+}
 
 // Handle file upload
 async function handleFileUpload(nomorSuratId: number, event: Event) {
